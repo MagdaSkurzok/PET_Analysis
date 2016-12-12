@@ -33,4 +33,5 @@ add_subdirectory(AnalysisExample)
 add_subdirectory(ScopeLoaderExample)
 add_subdirectory(ScopeAnalysis)
 add_subdirectory(LargeBarrelAnalysis)
+#add_subdirectory(LargeBarrelAnalysis_Ref)
 
