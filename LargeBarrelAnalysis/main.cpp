@@ -44,6 +44,8 @@ int main(int argc, char* argv[]) {
 					   "Assemble signals and create TOT historgrams"));
     });
 
+
+
   manager.registerTask([](){
       return new JPetTaskLoader("raw.sig", "phys.hit",
   				new TaskC("Module C: Pair signals",
