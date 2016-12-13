@@ -19,8 +19,10 @@
 #include "TaskA.h"
 #include "TaskB1.h"
 #include "TaskC.h"
+//#include "TaskCalib.h"
 #include "TaskD.h"
 #include "TaskE.h"
+
 
 using namespace std;
 
@@ -51,7 +53,14 @@ int main(int argc, char* argv[]) {
   				new TaskC("Module C: Pair signals",
   					  "Create hits from pairs of signals"));
     });
-  
+
+/*  
+manager.registerTask([](){
+      return new JPetTaskLoader("phys.hit", "phys.hit.reco",
+  				new TaskC("Module Calib: Pair hitss",
+  					  "Create hits from pairs of hits"));
+    });
+*/
 
 
   manager.registerTask([](){
@@ -60,7 +69,7 @@ int main(int argc, char* argv[]) {
 					  "Only make timeDiff histos and produce mean timeDiff value for each threshold and slot to be used by the next module"));
     });
   
-/*  
+ /* 
   manager.registerTask([](){
       return new JPetTaskLoader("phys.hit.means", "phys.hit.coincplots",
   				new TaskE("Module E: Filter hits",
