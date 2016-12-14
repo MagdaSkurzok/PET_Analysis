@@ -22,52 +22,17 @@
 #include <JPetWriter/JPetWriter.h>
 #include "TaskD.h"
 #include "TF1.h"
+#include "TString.h"
 #include <TDirectory.h>
-
+#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
 
 TaskD::TaskD(const char * name, const char * description):JPetTask(name, description){}
 
 void TaskD::init(const JPetTaskInterface::Options& opts){
 
-    //std::string gDirectory->GetFile()->GetName();
-    std::string str("Layer1_Slot19");
-    //std::string temp;
-    int number[3];
-
-//iterate the string to find the first "number" character
-//if found create another loop to extract it
-//and then break the current one
-//thus extracting the FIRST encountered numeric block
-
-    for (int i=0; i<str.size(); i++){
-
-//Funkcja isdigit zwraca wartość różną od zera gdy argument, który został przekazany do funkcji jest cyfrą. W przeciwnym wypadku funkcja zwraca wartość zero. 
-	
-        if (isdigit(str[i])){
-
-             //number[1]=str[i];
-
-//std::cout << str[i] << std::endl;  
-
-            //for (int a=i; a<str.size(); a++){
-
-              //  temp += str[a];               
-            //}
-	//}
-
-        }    
-    }
-    
-    //std::istringstream stream(temp);
-    //stream >> number;
-    
-    //std::cout << number[1] << std::endl;    
-  
-
-//gDirectory->GetFile()->GetName(); //path and name of output file example: 
-//zwraca np. "filename: collimated_source_small_barrel.tslot.raw.root"
-//std::cout<<gDirectory->GetFile()->GetName()<<std::endl;
-    
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	fBarrelMap.buildMappings(getParamBank());
 // create histograms for time differences at each slot and each threshold
@@ -104,7 +69,7 @@ void TaskD::init(const JPetTaskInterface::Options& opts){
 }
 
 
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void TaskD::exec(){
 	//getting the data from event in propriate format
@@ -114,18 +79,51 @@ void TaskD::exec(){
 	}
 }
 
-////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void TaskD::terminate(){
-	// save timeDiffAB mean values for each slot and each threshold in a JPetAuxilliaryData object
+
+//getting Layer and Slots numbers from analysing files name
+
+//gDirectory->GetFile()->GetName(); //path and name of output file example: 
+//zwraca np. "/home/mskurzok/j-pet-framework-examples/build/data_ref/Layer1_Slot16.phys.hit.means.root"
+
+std::vector<int> vectorOfNumbers;
+std::string str(gDirectory->GetFile()->GetName());//getting directory of analysing file
+int number=0;
+
+for (unsigned int i=0; i < str.size(); i++){
+
+	if (isdigit(str[i])){
+
+          std::stringstream ss;
+          ss<<str[i];
+          ss>>number; //convert string into int and store it in "asInt"
+
+//std::cout << "number" << number << std::endl;
+
+         vectorOfNumbers.push_back(number);
+
+	}
+}
+
+ //int a = vectorOfNumbers[0];
+ //int b = vectorOfNumbers[1];
+
+ //std::cout << a << std::endl;  
+ //std::cout << b << std::endl; 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// save timeDiffAB mean values for each slot and each threshold in a JPetAuxilliaryData object
 	// so that they are available to the consecutive modules
 	getAuxilliaryData().createMap("timeDiffAB mean values");
+
 
 //create output txt file with calibration parameters 
  
 	std::ofstream results_fit;
-	results_fit.open("results.txt", std::ios::app); //plik zostanie nadpisany
-
+	results_fit.open("results.txt", std::ios::app); //file will be overwrote
 
 	for(auto & slot : getParamBank().getBarrelSlots()){
 
@@ -136,22 +134,23 @@ void TaskD::terminate(){
 			getAuxilliaryData().setValue("timeDiffAB mean values", histo_name, mean);
 
 			TH1F* histoToSave = &(getStatistics().getHisto1D(histo_name));
+
+//non zero histos 
+// slot.first - ID
+// slot.second - wskaznik na JPetBarrelSlot
+//save fit parameters only for layerX and SlotY
+//fit just for proper slot
+
+			if(histoToSave->GetEntries() != 0 && (slot.second)->getLayer().getId()== vectorOfNumbers[0] && (slot.first==(10*vectorOfNumbers[1]+vectorOfNumbers[2]))){
+
+			//if(histoToSave->GetEntries() != 0 && (slot.second)->getLayer().getId()== 1 && (slot.first==20)){
 			int highestBin = histoToSave->GetBinCenter(histoToSave->GetMaximumBin());
 			histoToSave->Fit("gaus","","", highestBin-5, highestBin+5);
 			TCanvas* c = new TCanvas();
 			histoToSave->Draw();
 			std::string sHistoName = histo_name; sHistoName+=".png";
 			//c->SaveAs( sHistoName.c_str());
-
-//non zero histos 
-// slot.first - ID
-// slot.second - wskaznik na JPetBarrelSlot
-//save fit parameters only for layerX and SlotY
-
-			if(histoToSave->GetEntries() != 0 && (slot.second)->getLayer().getId()==1 && (slot.first==20))
-			{
-	
-//fitting gauss to time difference		
+		
 			TF1 *fit = histoToSave->GetFunction("gaus");
 
 			double position_peak = fit->GetParameter(1);
